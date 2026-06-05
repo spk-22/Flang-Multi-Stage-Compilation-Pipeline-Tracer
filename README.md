@@ -92,6 +92,68 @@ new_folder/
 ```
 
 ---
+# Visualizations & Dashboard Features
+
+## Parse Tree Visualization
+Displays the hierarchical Abstract Syntax Tree (AST) generated during parsing of the Fortran source program.  
+This helps users understand how the compiler interprets program structure before semantic analysis and IR lowering.
+
+![Parse Tree](screenshots/parse_tree.png)
+
+---
+
+## IR Code Inspection
+Shows generated intermediate representations including FIR, HLFIR, and LLVM IR.  
+Users can inspect compiler-generated transformations and trace how high-level Fortran constructs are lowered internally.
+
+![IR Code](screenshots/ir code.png)
+
+---
+
+## Cross-Stage Comparison & Static IR Reference
+Provides construct-level traceability between different compilation stages.  
+The dashboard correlates source code, parse tree nodes, semantic symbols, FIR, HLFIR, and LLVM IR using mapping references and trace IDs.
+
+![Cross Stage Comparison](screenshots/comparion%20(cross%20stage%20and%20static%20ir%20ref).png)
+
+---
+
+## IR Diff Analyzer
+Highlights differences between compiler optimization levels and IR transformations.  
+Useful for studying optimization effects, instruction-level changes, and generated code variations.
+
+![IR Diff Analyzer](screenshots/ir_diff_analyzer.png)
+
+---
+
+## Compilation Timeline Visualization
+Displays stage-wise compilation progression and timing information across the Flang pipeline.  
+Helps analyze compilation bottlenecks and execution flow from parsing to LLVM IR generation.
+
+![Compilation Timeline](screenshots/compilation_timeline.png)
+
+---
+
+## Performance Metrics Dashboard
+Provides overall compiler and runtime performance statistics including execution metrics, operation counts, and optimization comparisons.
+
+![Performance Metrics](screenshots/performance.png)
+
+---
+
+## Performance Heatmaps
+Visualizes operation density and performance hotspots across different compilation stages and IR regions.  
+Helps identify computationally intensive sections of generated IR.
+
+![Performance Heatmaps](screenshots/performance_heatmaps.png)
+
+---
+
+## Runtime Analytics
+Displays runtime-related analytics including execution estimates, memory tracking, and stage-level performance summaries.
+
+![Runtime Analytics](screenshots/runtime_analytics.png)
+---
 
 ## Setup & Run Instructions
 
