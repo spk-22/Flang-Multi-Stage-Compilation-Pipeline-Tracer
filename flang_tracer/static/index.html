@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flang Tracer - Multi-Stage Pipeline Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- D3.js and Chart.js -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/style.css?v=1.2">
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <h1>Flang <span>Tracer</span></h1>
+            <p>Multi-Stage Pipeline Dashboard</p>
+        </div>
+        <div class="controls">
+            <div class="control-group">
+                <label for="flang-input">Flang Path</label>
+                <input type="text" id="flang-input" value="/home/siya/llvm-project/build/bin/flang-new" placeholder="Path to flang-new">
+            </div>
+            <div class="control-group">
+                <label for="example-select">Example</label>
+                <select id="example-select">
+                    <option value="" disabled selected>Loading...</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="line-input">Line Range</label>
+                <input type="text" id="line-input" value="0-300" placeholder="e.g. 0-300">
+            </div>
+            <div class="control-group">
+                <label for="opt-select">Opt Level</label>
+                <select id="opt-select">
+                    <option value="O0">O0</option>
+                    <option value="O1">O1</option>
+                    <option value="O2">O2</option>
+                    <option value="O3">O3</option>
+                </select>
+            </div>
+            <div class="control-group checkbox-group">
+                <input type="checkbox" id="diff-opt">
+                <label for="diff-opt">Diff O3</label>
+            </div>
+            <button id="run-btn" class="btn primary">Trace</button>
+        </div>
+    </header>
+
+    <!-- Tabs -->
+    <div class="tab-bar" id="tab-bar">
+        <button class="tab-btn active" data-tab="tab-ir">IR Code</button>
+        <button class="tab-btn" data-tab="tab-performance">Performance</button>
+        <button class="tab-btn" data-tab="tab-comparison">Comparison</button>
+        <button class="tab-btn" data-tab="tab-parsetree">Parse Tree</button>
+        <button class="tab-btn" data-tab="tab-diff">IR Diff Analyzer</button>
+        <button class="tab-btn" data-tab="tab-heatmaps">Performance Heatmaps</button>
+        <button class="tab-btn" data-tab="tab-timeline">Compilation Timeline</button>
+        <button class="tab-btn" data-tab="tab-runtime">Runtime Analytics</button>
+    </div>
+
+    <main>
+        <!-- TAB 1: IR Code -->
+        <div id="tab-ir" class="tab-panel">
+            <div class="stages-panel">
+                <div class="stage-col" id="col-source">
+                    <h3>Source Code</h3>
+                    <div class="code-container"><pre><code id="code-source"></code></pre></div>
+                </div>
+                <div class="stage-col" id="col-parse_tree">
+                    <h3>Parse Tree <span class="status-badge" id="badge-parse_tree">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-parse_tree"></code></pre></div>
+                </div>
+                <div class="stage-col" id="col-semantic">
+                    <h3>Semantic <span class="status-badge" id="badge-semantic">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-semantic"></code></pre></div>
+                </div>
+                <div class="stage-col" id="col-hlfir">
+                    <h3>HLFIR <span class="status-badge" id="badge-hlfir">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-hlfir"></code></pre></div>
+                </div>
+                <div class="stage-col" id="col-fir">
+                    <h3>FIR <span class="status-badge" id="badge-fir">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-fir"></code></pre></div>
+                </div>
+                <div class="stage-col" id="col-llvm_ir">
+                    <h3><span id="llvm-title-text">LLVM IR</span> <span class="status-badge" id="badge-llvm_ir">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-llvm_ir"></code></pre></div>
+                </div>
+                <div class="stage-col hidden" id="col-llvm_ir_o3">
+                    <h3>LLVM IR (O3) <span class="status-badge" id="badge-llvm_ir_o3">Pending</span></h3>
+                    <div class="code-container"><pre><code id="code-llvm_ir_o3"></code></pre></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: Performance -->
+        <div id="tab-performance" class="tab-panel hidden">
+            <div class="perf-scroll-wrapper">
+                <!-- Row 1: Three compact charts side-by-side -->
+                <div class="perf-charts-row">
+                    <div class="graph-card-sm">
+                        <h3 class="graph-card-title">Execution Time (ms)</h3>
+                        <div class="chart-box-sm"><canvas id="time-chart"></canvas></div>
+                    </div>
+                    <div class="graph-card-sm">
+                        <h3 class="graph-card-title">Memory Usage (MB)</h3>
+                        <div class="chart-box-sm"><canvas id="memory-chart"></canvas></div>
+                    </div>
+                    <div class="graph-card-sm">
+                        <h3 class="graph-card-title">IR Operations Count</h3>
+                        <div class="chart-box-sm"><canvas id="irops-chart"></canvas></div>
+                    </div>
+                </div>
+
+                <!-- Row 2: Lowering Graph + Fortran Source + Documentation side-by-side -->
+                <div class="perf-bottom-row">
+                    <div class="panel lowering-panel" style="flex: 1; min-width: 0;">
+                        <h2>Lowering Pipeline Graph</h2>
+                        <div id="lowering-container" style="width: 100%; height: 220px; position: relative;"></div>
+                    </div>
+                    <div class="panel source-panel" style="flex: 1; min-width: 0;">
+                        <h2>Fortran Source</h2>
+                        <div class="code-container" style="flex: 1; overflow-y: auto;"><pre><code id="perf-code-source"></code></pre></div>
+                    </div>
+                    <div class="panel lowering-docs-panel" style="flex: 1; min-width: 0;">
+                        <h2>Lowering Expansion Documentation
+                            <span class="badge-info">Flang Developer Reference</span>
+                        </h2>
+                        <p class="panel-subtitle">Lowering patterns discovered during compilation — useful as a Flang developer reference.</p>
+                        <div id="lowering-docs-content" class="lowering-docs-body">
+                            <div class="lowering-doc-placeholder">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                                <p>Run a trace to discover lowering patterns.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: Comparison -->
+        <div id="tab-comparison" class="tab-panel hidden">
+            <div class="comparison-scroll-wrapper">
+                <div class="panel comparison-section">
+                    <h2>Cross-Stage Mapping Table</h2>
+                    <div id="ir-mapping-table" class="table-scroll-box"></div>
+                </div>
+                <div class="panel comparison-section">
+                    <h2>Static IR Comparison Reference</h2>
+                    <div class="search-container" style="margin-bottom: 0.75rem; display: flex; gap: 0.5rem; align-items: center;">
+                        <label for="ir-search" style="font-size: 0.85rem; color: #94a3b8;">Search:</label>
+                        <input type="text" id="ir-search" placeholder="Filter stages..." style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; padding: 0.4rem 0.8rem; color: #f8fafc; font-size: 0.85rem; flex: 1;">
+                    </div>
+                    <div id="ir-static-reference-table" class="table-scroll-box">
+                        <table id="static-ir-table" class="ir-mapping">
+                            <thead>
+                                <tr>
+                                    <th data-sort="0">Stage</th>
+                                    <th data-sort="1">Representation Type</th>
+                                    <th data-sort="2">Purpose</th>
+                                    <th data-sort="3">Human Readability</th>
+                                    <th data-sort="4">Optimization Capability</th>
+                                    <th data-sort="5">Key Operations</th>
+                                    <th data-sort="6">Role</th>
+                                </tr>
+                            </thead>
+                            <tbody id="static-ref-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 4: Parse Tree -->
+        <div id="tab-parsetree" class="tab-panel hidden">
+            <div class="panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h2 style="margin-bottom: 0;">Parse Tree Hierarchy</h2>
+                    <div class="parsetree-view-toggle">
+                        <button class="toggle-btn active" id="btn-text-view" title="Text View">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="15" y2="18"/></svg>
+                            Text
+                        </button>
+                        <button class="toggle-btn" id="btn-graph-view" title="Interactive Graph View">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><line x1="12" y1="8" x2="5" y2="16"/><line x1="12" y1="8" x2="19" y2="16"/></svg>
+                            Graph
+                        </button>
+                        <button class="toggle-btn" id="btn-search-tree" title="Search nodes">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <!-- Search bar (hidden by default) -->
+                <div id="parse-tree-search-bar" class="parse-tree-search hidden">
+                    <input type="text" id="parse-tree-search-input" placeholder="Search tree nodes... (e.g. Assignment, DO, CALL)">
+                    <span id="parse-tree-search-count" class="search-count"></span>
+                </div>
+                <!-- Text View -->
+                <pre id="parse-tree-output" class="code-container parse-tree-text-view" style="flex: 1; max-height: calc(100vh - 220px); overflow-y: auto; white-space: pre; font-family: 'JetBrains Mono', monospace; font-size: 14px; line-height: 1.5; color: #f8fafc; background: #0b0f19; padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);"></pre>
+                <!-- Graph View (hidden by default) -->
+                <div id="parse-tree-container" class="parse-tree-graph-view hidden" style="flex: 1; position: relative; min-height: 400px; background: #0b0f19; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); overflow: hidden;"></div>
+            </div>
+        </div>
+
+        <!-- TAB 5: IR Diff Analyzer -->
+        <div id="tab-diff" class="tab-panel hidden">
+            <div class="panel" style="flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 500px;">
+                <h2>IR Diff Analyzer</h2>
+                <p class="panel-subtitle" style="margin-bottom: 0.75rem;">Compare two stages side-by-side with synchronized scrolling and highlighting.</p>
+                <div class="diff-controls" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 0.75rem;">
+                    <div class="control-group">
+                        <label for="diff-stage-a">Stage A</label>
+                        <select id="diff-stage-a" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem;">
+                            <option value="source">Fortran Source</option>
+                            <option value="parse_tree">Parse Tree</option>
+                            <option value="semantic">Semantic</option>
+                            <option value="hlfir" selected>HLFIR</option>
+                            <option value="fir">FIR</option>
+                            <option value="llvm_ir">LLVM IR</option>
+                            <option value="llvm_ir_o3">LLVM IR (O3)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label for="diff-stage-b">Stage B</label>
+                        <select id="diff-stage-b" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem;">
+                            <option value="source">Fortran Source</option>
+                            <option value="parse_tree">Parse Tree</option>
+                            <option value="semantic">Semantic</option>
+                            <option value="hlfir">HLFIR</option>
+                            <option value="fir" selected>FIR</option>
+                            <option value="llvm_ir">LLVM IR</option>
+                            <option value="llvm_ir_o3">LLVM IR (O3)</option>
+                        </select>
+                    </div>
+                    <button id="run-diff-btn" class="btn primary" style="margin-top: 1rem; padding: 0.5rem 1.25rem; font-size: 0.85rem;">Analyze Diff</button>
+                </div>
+                <div class="diff-container" style="display: flex; gap: 0.5rem; flex: 1; min-height: 380px; overflow: hidden; background: #0b0f19; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px;">
+                    <div id="diff-left" class="diff-pane" style="flex: 1; overflow-y: auto; overflow-x: auto; padding: 0.75rem; border-right: 1px solid rgba(255,255,255,0.05); font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; white-space: pre;"></div>
+                    <div id="diff-right" class="diff-pane" style="flex: 1; overflow-y: auto; overflow-x: auto; padding: 0.75rem; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.6; white-space: pre;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 6: Performance Heatmaps -->
+        <div id="tab-heatmaps" class="tab-panel hidden">
+            <div class="perf-scroll-wrapper">
+                <div class="panel" style="min-height: 500px;">
+                    <h2>Performance Heatmaps</h2>
+                    <p class="panel-subtitle">Visual intensity heatmaps comparing resource weights and lowering costs across compilation passes.</p>
+                    
+                    <div style="margin-top: 1rem; margin-bottom: 2rem;">
+                        <h3 style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.25rem;">Stage Resource Utilization Weight</h3>
+                        <div class="heatmap-grid" id="stage-heatmap-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <!-- Populated dynamically via JS -->
+                            <div style="color: #64748b; text-align: center; padding: 2rem; grid-column: 1/-1;">Run a trace to populate heatmap metrics.</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h3 style="font-size: 0.95rem; color: var(--text-primary); margin-bottom: 0.75rem; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.25rem;">Lowering Patterns Complexity Reference</h3>
+                        <div class="heatmap-grid" id="lowering-heatmap-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+                            <!-- Populated dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 7: Compiler Pass Timeline -->
+        <div id="tab-timeline" class="tab-panel hidden">
+            <div class="perf-scroll-wrapper">
+                <div class="panel" style="min-height: 500px;">
+                    <h2>Compilation Timeline</h2>
+                    <p class="panel-subtitle">Chronological pass order and resource growth throughout the compiler lowering pipeline.</p>
+                    
+                    <div class="timeline-container" id="timeline-flow" style="display: flex; justify-content: space-between; align-items: center; background: rgba(15,23,42,0.4); padding: 1.5rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04); margin-bottom: 2rem; position: relative;">
+                        <!-- Horizontal flow nodes populated dynamically -->
+                        <div style="color: #64748b; text-align: center; width: 100%; padding: 1rem;">Run a trace to visualize compiler timeline.</div>
+                    </div>
+
+                    <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+                        <div class="panel" style="flex: 1; min-width: 300px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.04);">
+                            <h3 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">Stage Duration Breakdown</h3>
+                            <div id="timeline-duration-chart" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                                <!-- Dynamic progress bars -->
+                            </div>
+                        </div>
+                        <div class="panel" style="flex: 1; min-width: 300px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.04);">
+                            <h3 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">IR Size Evolution</h3>
+                            <div id="timeline-size-chart" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                                <!-- Dynamic progress bars -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 8: Runtime Analytics -->
+        <div id="tab-runtime" class="tab-panel hidden">
+            <div class="perf-scroll-wrapper">
+                <div class="panel" style="min-height: 500px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <h2 style="margin-bottom: 0;">Runtime Analytics</h2>
+                        <button class="btn primary rt-run-btn" style="margin: 0; padding: 0.4rem 1rem; font-size: 0.85rem;">Run Trace</button>
+                    </div>
+                    <p class="panel-subtitle">Telemetry tracking target execution speeds, memory footprints, and compile-time trade-offs.</p>
+                    
+                    <div class="runtime-card-grid" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                        <div class="graph-card-sm" style="flex: 1; min-width: 200px;">
+                            <h3 class="graph-card-title">Compilation Duration</h3>
+                            <div class="metric-val" id="rt-compile-time" style="font-size: 2rem; font-weight: 800; color: #60a5fa; margin: 0.5rem 0;">-</div>
+                            <div class="metric-sub" style="font-size: 0.75rem; color: var(--text-muted);">Compiler build cost</div>
+                        </div>
+                        <div class="graph-card-sm" style="flex: 1; min-width: 200px;">
+                            <h3 class="graph-card-title">Runtime Execution Speed</h3>
+                            <div class="metric-val" id="rt-execute-time" style="font-size: 2rem; font-weight: 800; color: #4ade80; margin: 0.5rem 0;">-</div>
+                            <div class="metric-sub" style="font-size: 0.75rem; color: var(--text-muted);">Executable runtime latency</div>
+                        </div>
+                        <div class="graph-card-sm" style="flex: 1; min-width: 200px;">
+                            <h3 class="graph-card-title">Runtime Memory RSS</h3>
+                            <div class="metric-val" id="rt-memory" style="font-size: 2rem; font-weight: 800; color: #a78bfa; margin: 0.5rem 0;">-</div>
+                            <div class="metric-sub" style="font-size: 0.75rem; color: var(--text-muted);">Max RSS resident memory</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 1.5rem; min-height: 420px; flex-wrap: wrap;">
+                        <div class="panel" style="flex: 1.2; min-width: 320px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column;">
+                            <h3 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Compile-Time Cost vs Runtime Speed Comparison</h3>
+                            <div style="flex: 1; position: relative; width: 100%; height: 320px;"><canvas id="runtime-comp-chart"></canvas></div>
+                        </div>
+                        <div class="panel" style="flex: 0.8; min-width: 250px; background: rgba(15, 23, 42, 0.4); border: 1px solid rgba(255,255,255,0.04); display: flex; flex-direction: column; overflow: hidden;">
+                            <h3 style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">Program Stdout Output</h3>
+                            <div class="code-container" style="flex: 1; overflow-y: auto; background: rgba(0,0,0,0.3); padding: 0.5rem 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);"><pre><code id="rt-stdout" style="color: #34d399; font-family:'JetBrains Mono', monospace; font-size:12px; white-space: pre-wrap; word-break: break-all;">Waiting for program trace execution...</code></pre></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Buttons (always visible) -->
+        <div class="export-bar">
+            <button id="export-json" class="btn">Export JSON</button>
+            <button id="export-html" class="btn">Export HTML</button>
+        </div>
+    </main>
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+## Project Demo Overview (Medium‑level)
+
+- **Goal:** Provide an interactive web dashboard that visualises the Fortran compilation pipeline (source → HLFIR → FIR → LLVM‑IR) produced by the Flang compiler, together with performance metrics captured during a trace run.
+- **How it works:** When a user clicks **Trace**, the front‑end sends the Fortran source to a FastAPI server. The server invokes Flang with `-ftime-trace`, captures the JSON trace, extracts the intermediate representations for each compilation stage, and streams them back via WebSocket. The UI then renders charts, graphs, and a side‑by‑side IR diff view, allowing developers to see exactly how code is lowered and where time/memory are spent.
+
+---
+
+## 10 Test Cases – What Each Does (2‑line summary)
+
+1. **Array Assignment (`01_array_assign.f90`)** – Simple scalar/array assignments; demonstrates basic memory allocation and store/load operations.
+2. **DO Concurrent (`02_do_concurrent.f90`)** – Uses the OpenMP‑style `do concurrent` construct; shows parallel loop lowering and thread‑safe memory handling.
+3. **WHERE (`03_where.f90`)** – Applies a masked assignment with the `where` construct; highlights conditional store generation.
+4. **FORALL (`04_forall.f90`)** – Implements an implicit DO loop via `forall`; tests transformation of array constructors into explicit loop nests.
+5. **Polymorphic Dispatch (`05_poly_dispatch.f90`)** – Calls a type‑bound procedure via class dispatch; illustrates runtime type‑descriptor handling.
+6. **Coarray (`06_coarray.f90`)** – Uses Fortran co‑array syntax for distributed memory; showcases lowering to communication primitives.
+7. **Slice (`07_slice.f90`)** – Extracts a sub‑array slice; demonstrates generation of address calculations and bounds checking.
+8. **Elemental (`08_elemental.f90`)** – Defines an elemental function and applies it element‑wise; shows vector‑friendly loop creation.
+9. **Associate (`09_associate.f90`)** – Uses `associate` to create temporary aliases; results in stack temporaries and aliasing metadata.
+10. **Critical Section (`10_critical.f90`)** – Contains a `critical` construct; lowers to atomic sections and synchronization code.
+
+---
+
+## Lowering Expansion Example (Variable Declaration)
+
+**Source:** `real :: A(5), B(5)`
+
+| Stage | Representation | What Happens |
+|-------|----------------|--------------|
+| **Source** | Fortran variable declaration | Defines two real arrays of length 5, establishing type and bounds.
+| **HLFIR** | `hlfir.declare %ref(%shape)` | Emits a high‑level FIR op that preserves the symbolic name, type and shape metadata for later analysis.
+| **FIR** | `fir.alloca` + `fir.declare` | Allocates stack storage (`fir.alloca`) sized for 5 × real and attaches a `fir.declare` tag linking the allocation to the original variable.
+| **LLVM IR** | `alloca` instruction | Generates a concrete stack‑frame slot (`alloca`) that the machine code will use at runtime.
+| **Transformation Explanation** | Each stage successively lowers abstraction: high‑level symbol → explicit allocation → concrete machine register allocation, while retaining debug locations for traceability.
+
+---
+
+## IR Diff Analyzer
+
+- **Red blocks** indicate instructions that **appear in the later stage but not in the earlier one** (i.e., newly introduced operations after a lowering step).
+- **Green blocks** indicate instructions that were **present in the earlier stage but eliminated** during lowering.
+- This visual diff lets you instantly see what the compiler added (e.g., loop constructs) or removed (e.g., high‑level intrinsics) as it transforms the program.
+
+---
+
+## Performance Heatmaps – Metrics Explained
+
+- **Operation Density** – Number of IR operations per source line (or per basic block). A high density means that a small source fragment expands into many low‑level instructions, hinting at possible optimisation opportunities.
+- **Complexity Index** – A weighted score combining operation count, nesting depth, and data‑dependency length. It reflects how structurally complex the generated code is; higher values often correlate with longer compile times or poorer runtime performance.
+
+These metrics are colour‑coded (e.g., warm colours for high values) on the heatmap, helping the developer pinpoint hotspots that deserve deeper inspection.
+
+---
+
+*Save this file as `demo_explanation.txt` in `new_folder` for quick reference during the project demonstration.*
