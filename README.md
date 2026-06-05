@@ -92,21 +92,19 @@ new_folder/
 ```
 
 ---
-# Visualizations & Dashboard Features
-
-## Parse Tree Visualization
-Displays the hierarchical Abstract Syntax Tree (AST) generated during parsing of the Fortran source program.  
-This helps users understand how the compiler interprets program structure before semantic analysis and IR lowering.
-
-![Parse Tree](visuals/parse_tree.png)
-
----
 
 ## IR Code Inspection
 Shows generated intermediate representations including FIR, HLFIR, and LLVM IR.  
 Users can inspect compiler-generated transformations and trace how high-level Fortran constructs are lowered internally.
 
 ![IR Code](visuals/ir code.png)
+
+---
+
+## Performance Metrics Dashboard
+Provides overall compiler and runtime performance statistics including execution metrics, operation counts, and optimization comparisons.
+
+![Performance Metrics](visuals/performance.png)
 
 ---
 
@@ -118,26 +116,21 @@ The dashboard correlates source code, parse tree nodes, semantic symbols, FIR, H
 
 ---
 
+# Visualizations & Dashboard Features
+
+## Parse Tree Visualization
+Displays the hierarchical Abstract Syntax Tree (AST) generated during parsing of the Fortran source program.  
+This helps users understand how the compiler interprets program structure before semantic analysis and IR lowering.
+
+![Parse Tree](visuals/parse_tree.png)
+
+---
+
 ## IR Diff Analyzer
 Highlights differences between compiler optimization levels and IR transformations.  
 Useful for studying optimization effects, instruction-level changes, and generated code variations.
 
-![IR Diff Analyzer](visuals/ir_diff_analyzer.png)
-
----
-
-## Compilation Timeline Visualization
-Displays stage-wise compilation progression and timing information across the Flang pipeline.  
-Helps analyze compilation bottlenecks and execution flow from parsing to LLVM IR generation.
-
-![Compilation Timeline](visuals/compilation_timeline.png)
-
----
-
-## Performance Metrics Dashboard
-Provides overall compiler and runtime performance statistics including execution metrics, operation counts, and optimization comparisons.
-
-![Performance Metrics](visuals/performance.png)
+![IR Diff Analyzer](visuals/ir_diff_analyzer.png) 
 
 ---
 
@@ -146,6 +139,14 @@ Visualizes operation density and performance hotspots across different compilati
 Helps identify computationally intensive sections of generated IR.
 
 ![Performance Heatmaps](visuals/performance_heatmaps.png)
+
+---
+
+## Compilation Timeline Visualization
+Displays stage-wise compilation progression and timing information across the Flang pipeline.  
+Helps analyze compilation bottlenecks and execution flow from parsing to LLVM IR generation.
+
+![Compilation Timeline](visuals/compilation_timeline.png)
 
 ---
 
