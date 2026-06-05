@@ -17,7 +17,71 @@ http://localhost:8000/
 > **Note**: Using `--host 0.0.0.0` makes the server accessible on all network interfaces (LAN-reachable). For local-only access substitute `127.0.0.1`.
 
 ---
+## VISUALS
 
+## IR Code Inspection
+Shows generated intermediate representations including FIR, HLFIR, and LLVM IR.  
+Users can inspect compiler-generated transformations and trace how high-level Fortran constructs are lowered internally.
+
+![IR Code](visuals/ir code.png)
+
+---
+
+## Performance Metrics Dashboard
+Provides overall compiler and runtime performance statistics including execution metrics, operation counts, and optimization comparisons.
+
+![Performance Metrics](visuals/performance.png)
+
+---
+
+## Cross-Stage Comparison & Static IR Reference
+Provides construct-level traceability between different compilation stages.  
+The dashboard correlates source code, parse tree nodes, semantic symbols, FIR, HLFIR, and LLVM IR using mapping references and trace IDs.
+
+![Cross Stage Comparison](visuals/comparion%20(cross%20stage%20and%20static%20ir%20ref).png)
+
+---
+
+# Visualizations & Dashboard Features
+
+## Parse Tree Visualization
+Displays the hierarchical Abstract Syntax Tree (AST) generated during parsing of the Fortran source program.  
+This helps users understand how the compiler interprets program structure before semantic analysis and IR lowering.
+
+![Parse Tree](visuals/parse_tree.png)
+
+---
+
+## IR Diff Analyzer
+Highlights differences between compiler optimization levels and IR transformations.  
+Useful for studying optimization effects, instruction-level changes, and generated code variations.
+
+![IR Diff Analyzer](visuals/ir_diff_analyzer.png) 
+
+---
+
+## Performance Heatmaps
+Visualizes operation density and performance hotspots across different compilation stages and IR regions.  
+Helps identify computationally intensive sections of generated IR.
+
+![Performance Heatmaps](visuals/performance_heatmaps.png)
+
+---
+
+## Compilation Timeline Visualization
+Displays stage-wise compilation progression and timing information across the Flang pipeline.  
+Helps analyze compilation bottlenecks and execution flow from parsing to LLVM IR generation.
+
+![Compilation Timeline](visuals/compilation_timeline.png)
+
+---
+
+## Runtime Analytics
+Displays runtime-related analytics including execution estimates, memory tracking, and stage-level performance summaries.
+
+![Runtime Analytics](visuals/runtime_analytics.png)
+
+---
 ## Repository Layout & Project Structure
 
 The project is structured as follows:
@@ -90,70 +154,6 @@ new_folder/
 └── scripts/                  # Convenience scripts for automation
     └── run_all_testcases.py  # Script running tracer logic over all available test cases
 ```
-
----
-
-## IR Code Inspection
-Shows generated intermediate representations including FIR, HLFIR, and LLVM IR.  
-Users can inspect compiler-generated transformations and trace how high-level Fortran constructs are lowered internally.
-
-![IR Code](visuals/ir code.png)
-
----
-
-## Performance Metrics Dashboard
-Provides overall compiler and runtime performance statistics including execution metrics, operation counts, and optimization comparisons.
-
-![Performance Metrics](visuals/performance.png)
-
----
-
-## Cross-Stage Comparison & Static IR Reference
-Provides construct-level traceability between different compilation stages.  
-The dashboard correlates source code, parse tree nodes, semantic symbols, FIR, HLFIR, and LLVM IR using mapping references and trace IDs.
-
-![Cross Stage Comparison](visuals/comparion%20(cross%20stage%20and%20static%20ir%20ref).png)
-
----
-
-# Visualizations & Dashboard Features
-
-## Parse Tree Visualization
-Displays the hierarchical Abstract Syntax Tree (AST) generated during parsing of the Fortran source program.  
-This helps users understand how the compiler interprets program structure before semantic analysis and IR lowering.
-
-![Parse Tree](visuals/parse_tree.png)
-
----
-
-## IR Diff Analyzer
-Highlights differences between compiler optimization levels and IR transformations.  
-Useful for studying optimization effects, instruction-level changes, and generated code variations.
-
-![IR Diff Analyzer](visuals/ir_diff_analyzer.png) 
-
----
-
-## Performance Heatmaps
-Visualizes operation density and performance hotspots across different compilation stages and IR regions.  
-Helps identify computationally intensive sections of generated IR.
-
-![Performance Heatmaps](visuals/performance_heatmaps.png)
-
----
-
-## Compilation Timeline Visualization
-Displays stage-wise compilation progression and timing information across the Flang pipeline.  
-Helps analyze compilation bottlenecks and execution flow from parsing to LLVM IR generation.
-
-![Compilation Timeline](visuals/compilation_timeline.png)
-
----
-
-## Runtime Analytics
-Displays runtime-related analytics including execution estimates, memory tracking, and stage-level performance summaries.
-
-![Runtime Analytics](visuals/runtime_analytics.png)
 
 ---
 
