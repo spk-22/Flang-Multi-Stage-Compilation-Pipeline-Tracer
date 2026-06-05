@@ -18,12 +18,14 @@ http://localhost:8000/
 
 ---
 ## VISUALS
+---
 
 ## IR Code Inspection
 Shows generated intermediate representations including FIR, HLFIR, and LLVM IR.  
 Users can inspect compiler-generated transformations and trace how high-level Fortran constructs are lowered internally.
 
-![IR Code](visuals/ir code.png)
+![IR Code](visuals/ir%20code.png)
+
 
 ---
 
