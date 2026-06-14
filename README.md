@@ -4,8 +4,8 @@ A multi-stage compilation pipeline tracer for the Flang (Fortran) compiler. It v
 
 ---
 ## Demo Video
-
-[Watch Demo](Flang%20Multi%20Stage%20Compilation%20Pipeline%20Tracer.mp4)
+Watch the Video below for setup and demo
+https://github.com/spk-22/Flang-Multi-Stage-Compilation-Pipeline-Tracer/issues/2#issue-4658369821
 
 ## Quick Launch
 
