@@ -5,7 +5,6 @@ A multi-stage compilation pipeline tracer for the Flang (Fortran) compiler. It v
 ---
 ## Demo Video
 Watch the Video below for setup and demo
-## Demo Video
 
 [Watch Demo Video](https://github.com/user-attachments/assets/d109074c-ccd2-408e-81e2-21183563b87c)
 
