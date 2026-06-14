@@ -3,6 +3,9 @@
 A multi-stage compilation pipeline tracer for the Flang (Fortran) compiler. It visualizes the parse tree, semantic symbols, FIR (Fortran IR), HLFIR (High-Level FIR), LLVM IR, and memory/performance metrics through an interactive web-based dashboard.
 
 ---
+## Demo Video
+
+[Watch Demo](Flang Multi Stage Compilation Pipeline Tracer.mp4)
 
 ## Quick Launch
 
